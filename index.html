@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ClassFlow | ตารางสอนและตารางเรียน</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Pridi:wght@400;500;600&display=swap');
+
+		:root { --ink: #182a3a; --muted: #6d7c87; --cream: #f6f3ed; --paper: #fffdf8; --teal: #167d7f; --coral: #e06f52; --line: #e3e5df; --shadow: 0 24px 70px rgba(32, 61, 67, .13); }
+		* { box-sizing: border-box; }
+		body { margin: 0; color: var(--ink); background: var(--cream); font-family: 'Kanit', sans-serif; min-height: 100vh; }
+		button, input, select { font: inherit; }
+		.shell { min-height: 100vh; display: grid; grid-template-columns: 44% 56%; }
+		.shell.landing { display: block; background: #176d70; }
+		.welcome { position: relative; overflow: hidden; color: #fff; padding: 44px clamp(34px, 6vw, 90px); display: flex; flex-direction: column; justify-content: space-between; background: #176d70; }
+		.shell.landing .brand { position: absolute; top: 38px; left: clamp(28px, 6vw, 90px); }
+		.shell.landing .hero-copy { max-width: 720px; }
+		.shell.landing .hero-copy h1 { font-size: clamp(48px, 8vw, 92px); margin-bottom: 18px; }
+		.shell.landing .hero-copy p { max-width: 560px; margin: auto; }
+		.shell.landing .feature-row { display: none; }
+		.shell.landing .login-area { display: none; }
+		.shell:not(.landing) .landing-actions { display: none; }
+		.landing-actions { z-index: 1; display: flex; justify-content: center; gap: 14px; margin-top: 34px; }
+		.landing-action { min-width: 150px; border: 0; border-radius: 10px; padding: 14px 24px; color: var(--ink); background: #fff; font-weight: 600; cursor: pointer; box-shadow: 0 8px 18px rgba(0,0,0,.12); transition: transform .2s, background .2s; }
+		.landing-action:hover { transform: translateY(-2px); background: #f4ffff; }
+		.landing-action.primary { color: #fff; background: var(--coral); }
+		.welcome::before, .welcome::after { content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); pointer-events: none; }
+		.welcome::before { width: 520px; height: 520px; right: -220px; top: -100px; box-shadow: 0 0 0 42px rgba(255,255,255,.035), 0 0 0 84px rgba(255,255,255,.025); }
+		.welcome::after { width: 280px; height: 280px; left: -160px; bottom: 80px; }
+		.brand { z-index: 1; display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 600; }
+		.brand-mark { width: 38px; height: 38px; display: grid; place-items: center; background: var(--coral); border-radius: 11px; font-size: 22px; }
+		.hero-copy { z-index: 1; max-width: 450px; }
+		.hero-copy .eyebrow { color: #a7dddd; letter-spacing: 1px; font-size: 13px; }
+		.hero-copy h1 { font-family: 'Pridi', serif; font-weight: 600; font-size: clamp(40px, 5vw, 72px); line-height: 1.08; margin: 12px 0 22px; }
+		.hero-copy p { color: #d8eeee; font-size: 17px; line-height: 1.75; margin: 0; }
+		.feature-row { z-index: 1; display: flex; gap: 28px; color: #c7e6e4; font-size: 14px; }
+		.feature-row span { display: flex; align-items: center; gap: 8px; }
+		.feature-row b { color: #ffb39f; font-size: 18px; }
+		.login-area { display: grid; place-items: center; padding: 42px 28px; background: var(--paper); }
+		.login-card { width: min(100%, 490px); }
+		.login-card.role-selection { text-align: center; }
+		.role-gate { display: none; }
+		.login-card.role-selection .role-gate { display: block; }
+		.login-card.role-selection .auth-switch, .login-card.role-selection #authTitle, .login-card.role-selection #authSubtitle, .login-card.role-selection .teacher-details, .login-card.role-selection .student-details, .login-card.role-selection > .field, .login-card.role-selection #authSubmit, .login-card.role-selection #authHint { display: none; }
+		.login-card.role-selection .role-switch { margin-top: 20px; }
+		.role-gate h2 { font-family: 'Pridi', serif; font-size: 34px; margin: 0 0 7px; }
+		.role-gate p { color: var(--muted); margin: 0; }
+		.login-card h2 { font-family: 'Pridi', serif; font-size: 34px; margin: 0 0 7px; }
+		.sub { color: var(--muted); margin: 0 0 30px; }
+		.role-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 26px; background: #f8f8f4; }
+		.role { border: 0; background: transparent; cursor: pointer; padding: 13px 12px; color: var(--muted); border-radius: 10px; transition: .2s; }
+		.role.active { color: var(--teal); background: #fff; box-shadow: 0 3px 12px rgba(20,70,70,.08); font-weight: 600; }
+		.role-icon { display: block; font-size: 22px; margin-bottom: 2px; }
+		.auth-switch { display: none; }
+		.auth-tab { border: 1px solid var(--line); border-radius: 9px; padding: 11px 12px; color: var(--muted); background: #fff; cursor: pointer; transition: .2s; }
+		.auth-tab.active { color: #fff; border-color: var(--teal); background: var(--teal); font-weight: 600; }
+		.field { margin-bottom: 18px; }
+		label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+		.input-wrap { position: relative; }
+		.input-wrap .input-icon { position: absolute; left: 15px; top: 12px; font-size: 18px; color: #9ba7aa; }
+		.password-wrap input { padding-right: 68px; }
+		.password-toggle { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); border: 0; padding: 4px 6px; color: var(--teal); background: transparent; cursor: pointer; font-size: 12px; }
+		input, select { width: 100%; border: 1px solid #d8deda; border-radius: 10px; background: #fff; color: var(--ink); padding: 13px 15px 13px 44px; outline: 0; transition: .2s; }
+		select { padding-left: 15px; appearance: auto; }
+		input:focus, select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(22,125,127,.11); }
+		.password-row { display: flex; justify-content: space-between; align-items: center; }
+		.password-row a { color: var(--teal); font-size: 13px; text-decoration: none; }
+		.password-note { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; }
+		.login-button { width: 100%; border: 0; border-radius: 10px; padding: 14px; margin-top: 8px; background: var(--coral); color: #fff; font-weight: 600; cursor: pointer; box-shadow: 0 8px 18px rgba(224,111,82,.2); transition: transform .2s, background .2s; }
+		.login-button:hover { background: #cb5c43; transform: translateY(-1px); }
+		.hint { text-align: center; color: #9aa4a6; font-size: 12px; margin: 20px 0 0; }
+		.teacher-details { border-top: 1px solid var(--line); margin: 24px 0 20px; padding-top: 20px; }
+		.teacher-details h3 { font-family: 'Pridi', serif; font-size: 21px; margin: 0 0 16px; }
+		.student-details { border-top: 1px solid var(--line); margin: 24px 0 20px; padding-top: 20px; }
+		.student-details h3 { font-family: 'Pridi', serif; font-size: 21px; margin: 0 0 16px; }
+		.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+		.form-grid .full { grid-column: 1 / -1; }
+		.teacher-details input, .teacher-details select { padding: 11px 12px; }
+		.teacher-details .field { margin-bottom: 14px; }
+		.teacher-details.registration-mode .schedule-field { display: none; }
+		.student-details input, .student-details select { padding: 11px 12px; }
+		.student-details .field { margin-bottom: 14px; }
+		.student-details.registration-mode .student-registration-hidden { display: none; }
+		.student-planner { display: none; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 22px; margin-top: 24px; }
+		.student-planner.show { display: block; }
+		.dashboard.student-mode .stat-row { display: none; }
+		.dashboard.student-mode .dash-content { display: flex; flex-direction: column; }
+		.dashboard.student-mode .student-planner { order: 2; }
+		.dashboard.student-mode .schedule { order: 3; }
+		.dashboard.student-mode .student-planner { margin-top: 0; }
+		.dashboard.student-mode .teacher-dashboard, .dashboard.student-mode .teacher-booking { display: none; }
+		.student-planner h2 { font-family: 'Pridi', serif; font-size: 23px; margin: 0 0 4px; }
+		.student-planner > p { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+		.teacher-dashboard { margin-bottom: 24px; }
+		.teacher-profile { color: var(--muted); margin: 0 0 18px; }
+		.teacher-actions { display: flex; gap: 12px; }
+		.teacher-action { border: 0; border-radius: 9px; padding: 12px 20px; color: #fff; background: var(--teal); cursor: pointer; }
+		.teacher-action.secondary { color: var(--teal); border: 1px solid var(--teal); background: transparent; }
+		.teacher-booking { display: none; padding: 20px; margin-bottom: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
+		.teacher-booking.show { display: block; }
+		.teacher-booking h2 { font-family: 'Pridi', serif; font-size: 23px; margin: 0 0 16px; }
+		.booking-form { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+		.booking-form label { font-size: 12px; margin-bottom: 5px; }
+		.booking-form input { padding: 10px 11px; }
+		.planner-form { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+		.planner-form label { font-size: 12px; margin-bottom: 5px; }
+		.planner-form input, .planner-form select { padding: 10px 11px; }
+		.add-subject { border: 0; border-radius: 9px; padding: 10px 16px; color: #fff; background: var(--teal); cursor: pointer; white-space: nowrap; }
+		.subject-list { display: grid; gap: 9px; margin-top: 19px; }
+		.subject-item { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: 8px; background: #fbfaf5; }
+		.subject-item strong { display: block; font-size: 14px; }.subject-item small { color: var(--muted); font-size: 12px; }.locked { color: var(--teal); font-size: 12px; white-space: nowrap; }.edit-subject { border: 1px solid var(--line); background: #fff; border-radius: 7px; padding: 5px 10px; color: var(--teal); cursor: pointer; margin-left: 10px; }
+		[hidden] { display: none !important; }
+		.dashboard { display: none; min-height: 100vh; background: var(--cream); }
+		.dashboard.show { display: block; }
+		.dash-head { padding: 28px clamp(22px, 5vw, 70px) 18px; display: flex; justify-content: space-between; align-items: center; background: var(--paper); border-bottom: 1px solid var(--line); }
+		.dash-brand { font-size: 19px; font-weight: 600; display:flex; gap:10px; align-items:center; color:var(--teal); }
+		.user-badge { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:14px; }
+		.avatar { width:36px;height:36px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--coral); }
+		.logout { border:1px solid var(--line);background:transparent;border-radius:8px;padding:7px 12px;color:var(--muted);cursor:pointer;margin-left:15px; }
+		.confirm-modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(24, 42, 58, .42); z-index: 20; }
+		.confirm-modal[hidden] { display: none; }
+		.confirm-box { width: min(100%, 390px); padding: 28px; background: var(--paper); border-radius: 14px; box-shadow: var(--shadow); text-align: center; }
+		.confirm-icon { width: 48px; height: 48px; display: grid; place-items: center; margin: 0 auto 14px; border-radius: 50%; color: var(--coral); background: #fce9e3; font-size: 24px; }
+		.confirm-box h2 { font-family: 'Pridi', serif; font-size: 25px; margin: 0 0 6px; }.confirm-box p { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+		.confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.confirm-actions button { border: 0; border-radius: 9px; padding: 11px; cursor: pointer; }.cancel-logout { color: var(--muted); background: #eef0ec; }.confirm-logout { color: #fff; background: var(--coral); }
+		.reset-box { width: min(100%, 430px); text-align: left; }.reset-box h2 { text-align: center; }.reset-box > p { text-align: center; }.reset-form .field { margin-bottom: 14px; }.reset-form input { padding-left: 15px; }.reset-actions { margin-top: 20px; }.reset-submit { color: #fff; background: var(--teal); }
+		.dash-content { max-width: 1200px; margin: auto; padding: 38px clamp(22px, 5vw, 70px); }
+		.dash-title { display:flex;justify-content:space-between;align-items:end;margin-bottom:27px; }
+		.dash-title h1 { font-family:'Pridi',serif;font-size:35px;margin:0 0 3px; }.dash-title p{color:var(--muted);margin:0}.week-select{padding:9px 14px;border-radius:9px;width:auto;}
+		.schedule { background: var(--paper); border:1px solid var(--line); border-radius:12px; overflow:auto; box-shadow:var(--shadow); }
+		.remove-class { border: 1px solid #e8b9ad; border-radius: 6px; padding: 4px 7px; margin-top: 8px; color: #b64d39; background: #fff; cursor: pointer; font-size: 11px; }
+		table { width:100%; border-collapse:collapse; min-width:720px; }.schedule th{font-size:13px;font-weight:500;color:var(--muted);background:#f8f7f1;padding:15px 12px;text-align:center;position:sticky;top:0;z-index:2}.schedule th:first-child{text-align:left;width:110px;left:0;z-index:3}.schedule td{border-top:1px solid var(--line);border-right:1px solid var(--line);height:92px;padding:8px;vertical-align:top}.schedule td:first-child{color:var(--muted);font-size:13px;font-weight:500;vertical-align:middle;text-align:left;padding-left:16px;background:#fbfaf5;position:sticky;left:0;z-index:1}.class{height:100%;border-left:4px solid var(--teal);background:#e7f3f0;padding:8px 9px;border-radius:6px;font-size:13px;line-height:1.4}.class.coral{border-color:var(--coral);background:#fce9e3}.class strong{display:block;font-weight:600}.class small{color:#5c7978}.empty{color:#b4bdb7;text-align:center;font-size:12px;padding-top:22px}.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}.stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:17px 20px}.stat span{color:var(--muted);font-size:13px}.stat strong{display:block;color:var(--teal);font-size:25px;margin-top:3px}
+		@media (max-width: 760px) { .shell{display:block}.welcome{min-height:330px;padding:28px 25px 32px}.hero-copy h1{font-size:43px;margin:8px 0 8px}.hero-copy p{font-size:14px;line-height:1.5}.feature-row{margin-top:25px;gap:14px;font-size:12px}.login-area{padding:35px 22px;min-height:590px}.login-card h2{font-size:29px}.dash-head{padding:18px 20px}.user-badge>span{display:none}.dash-content{padding:27px 18px}.dash-title{align-items:start;gap:15px}.dash-title h1{font-size:29px}.week-select{max-width:130px}.stat-row{grid-template-columns:1fr}.logout{margin-left:5px}.brand{font-size:18px} }
+		@media (max-width: 900px) { .planner-form, .booking-form { grid-template-columns: 1fr 1fr; }.planner-form .subject-input, .booking-form .field:first-child { grid-column: 1 / -1; }.add-subject { width: 100%; } }
+	</style>
+</head>
+<body>
+	<main class="shell landing" id="loginView">
+		<section class="welcome">
+			<div class="brand"><span class="brand-mark">✦</span> ClassFlow</div>
+			<div class="hero-copy"><div class="eyebrow">SMART ACADEMIC SCHEDULE</div><h1>ทุกคาบเรียน<br>มีความหมาย</h1><p>จัดการตารางสอนและตารางเรียนของคุณได้ง่ายขึ้น ในพื้นที่เดียวที่ออกแบบมาเพื่อโรงเรียนของเรา</p><div class="landing-actions"><button type="button" class="landing-action primary" data-auth="register">สมัคร</button><button type="button" class="landing-action" data-auth="login">เข้าสู่ระบบ</button></div></div>
+			<div class="feature-row"><span><b>◷</b> ตารางแบบเรียลไทม์</span><span><b>✓</b> ใช้งานง่าย</span></div>
+		</section>
+		<section class="login-area">
+			<form class="login-card" id="loginForm">
+				<div class="role-gate"><h2>เลือกประเภทผู้ใช้งาน</h2><p>กรุณาเลือกเพื่อดำเนินการต่อ</p></div>
+				<div class="auth-switch" role="tablist" aria-label="การใช้งานบัญชี"><button type="button" class="auth-tab" data-auth="register">สมัคร</button><button type="button" class="auth-tab active" data-auth="login">เข้าสู่ระบบ</button></div>
+				<h2 id="authTitle">ยินดีต้อนรับกลับ</h2><p class="sub" id="authSubtitle">เข้าสู่ระบบเพื่อดูตารางเวลาของคุณ</p>
+				<div class="role-switch" role="tablist"><button type="button" class="role active" data-role="teacher"><span class="role-icon">♙</span>อาจารย์</button><button type="button" class="role" data-role="student"><span class="role-icon">♧</span>นักเรียน</button></div>
+				<div class="teacher-details" id="teacherDetails">
+					<h3>ข้อมูลคาบเรียนที่จะสอน</h3>
+					<div class="form-grid">
+						<div class="field full"><label for="teacherName">ชื่ออาจารย์</label><input id="teacherName" type="text" placeholder="เช่น อาจารย์สมชาย ใจดี" required></div>
+						<div class="field"><label for="department">แผนก / วิชา</label><select id="department" required><option value="">เลือกแผนกวิชา</option><option>ช่างยนต์</option><option>ไฟฟ้ากำลัง</option><option>เทคโนโลยีธุรกิจดิจิทัล</option><option>การบัญชี</option><option>การตลาด</option><option>เสริมสวย</option><option>นวดแผนไทย</option></select></div>
+						<div class="field schedule-field"><label for="room">ห้องที่จะสอน</label><input id="room" type="text" placeholder="เช่น ห้อง 402" required></div>
+						<div class="field full schedule-field"><label for="subject">รายวิชาที่จะสอน</label><input id="subject" type="text" placeholder="เช่น คณิตศาสตร์พื้นฐาน" required></div>
+						<div class="field schedule-field"><label for="day">วันที่สอน</label><input id="day" type="date" required></div>
+						<div class="field schedule-field"><label for="startTime">เวลาเริ่มสอน</label><input id="startTime" type="time" required></div>
+						<div class="field schedule-field"><label for="endTime">เวลาสิ้นสุด</label><input id="endTime" type="time" required></div>
+					</div>
+				</div>
+				<div class="student-details" id="studentDetails" hidden>
+					<h3>ข้อมูลนักเรียน</h3>
+					<div class="form-grid">
+						<div class="field full"><label for="studentName">ชื่อ - นามสกุล</label><input id="studentName" type="text" placeholder="เช่น เด็กดี เรียนเก่ง" disabled></div>
+						<div class="field student-registration-hidden"><label for="studentId">รหัสนักเรียน</label><input id="studentId" type="text" placeholder="เช่น 67001" disabled></div>
+						<div class="field"><label for="studentLevel">ระดับชั้น</label><select id="studentLevel" disabled><option value="">เลือกระดับชั้น</option><option>ม.1</option><option>ม.2</option><option>ม.3</option><option>ม.4</option><option>ม.5</option><option>ม.6</option><option>ปวช. 1</option><option>ปวช. 2</option><option>ปวช. 3</option><option>ปวส. 1</option><option>ปวส. 2</option></select></div>
+						<div class="field"><label for="studentRoom">ห้องเรียน</label><select id="studentRoom" disabled><option value="">เลือกระดับชั้นก่อน</option></select></div>
+					</div>
+				</div>
+				<div class="field"><label for="account">อีเมล</label><div class="input-wrap"><span class="input-icon">@</span><input id="account" type="email" placeholder="กรอกอีเมลของคุณ" required></div></div>
+				<div class="field"><div class="password-row"><label for="password">รหัสผ่าน</label><a id="forgotPassword" href="#" onclick="return false">ลืมรหัสผ่าน?</a></div><div class="input-wrap password-wrap"><span class="input-icon">▣</span><input id="password" type="password" placeholder="กรอกรหัสผ่าน" minlength="6" required><button class="password-toggle" id="passwordToggle" type="button" aria-label="แสดงรหัสผ่าน">แสดง</button></div><small class="password-note">ต้องตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร</small></div>
+				<button class="login-button" id="authSubmit" type="submit">เข้าสู่ระบบ <span aria-hidden="true">→</span></button><p class="hint" id="authHint">ใช้ อีเมล และรหัสผ่านเพื่อเข้าสู่ระบบ</p>
+			</form>
+		</section>
+	</main>
+
+	<section class="dashboard" id="dashboardView">
+		<header class="dash-head"><div class="dash-brand"><span class="brand-mark">✦</span> ClassFlow</div><div class="user-badge"><span id="userType">อาจารย์</span><span class="avatar" id="avatar">อ</span><button class="logout" id="logout">ออกจากระบบ</button></div></header>
+		<div class="dash-content"><div class="dash-title"><div><h1 id="scheduleTitle">ตารางสอนประจำสัปดาห์</h1></div><select class="week-select" aria-label="เลือกสัปดาห์"><option>สัปดาห์นี้</option><option>สัปดาห์หน้า</option></select></div>
+			<div class="teacher-dashboard" id="teacherDashboard"><p class="teacher-profile" id="teacherProfile"></p><div class="teacher-actions"><button type="button" class="teacher-action" id="bookClass">จองตารางวิชา</button><button type="button" class="teacher-action secondary" id="viewSchedule">ดูตาราง</button></div></div>
+			<div class="teacher-booking" id="teacherBooking"><h2>จองตารางวิชา</h2><form class="booking-form" id="bookingForm"><div class="field"><label for="bookingSubject">รายวิชา</label><input id="bookingSubject" required></div><div class="field"><label for="bookingRoom">ห้อง</label><input id="bookingRoom" placeholder="เช่น ห้อง 402" required></div><div class="field"><label for="bookingDate">วันที่</label><input id="bookingDate" type="date" required></div><div class="field"><label for="bookingStart">เริ่ม</label><input id="bookingStart" type="time" required></div><div class="field"><label for="bookingEnd">สิ้นสุด</label><input id="bookingEnd" type="time" required></div><button class="add-subject" type="submit">บันทึกคาบ</button></form></div>
+			<div class="schedule"><table id="scheduleTable"><caption hidden>ตารางเวลา โดยเวลาอยู่แนวตั้งด้านซ้าย และวันจันทร์ถึงวันศุกร์อยู่แนวนอนด้านบน</caption><thead><tr><th>เวลา</th><th>จันทร์</th><th>อังคาร</th><th>พุธ</th><th>พฤหัสบดี</th><th>ศุกร์</th></tr></thead><tbody id="scheduleBody">
+						<tr data-time="08:00"><td>08:00 - 09:00</td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td></tr>
+						<tr data-time="09:00"><td>09:00 - 10:00</td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td></tr>
+				<tr data-time="10:00"><td>10:00 - 11:00</td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td></tr>
+				<tr data-time="13:00"><td>13:00 - 14:00</td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td><td><div class="empty">—</div></td></tr>
+			</tbody></table></div>
+			<div class="student-planner" id="studentPlanner"><h2>กรอกตารางเรียนของคุณ</h2><p class="student-profile" id="studentProfile"></p><p>เพิ่มวิชาที่ต้องการเรียน วิชาที่บันทึกแล้วจะถูกล็อกไว้และแก้ไขได้ด้วยปุ่มแก้ไข</p><form class="planner-form" id="subjectForm"><div class="field subject-input"><label for="plannedSubject">รายวิชา</label><input id="plannedSubject" placeholder="เช่น ภาษาอังกฤษ" required></div><div class="field"><label for="plannedDay">วัน</label><select id="plannedDay" required><option value="">เลือกวัน</option><option>จันทร์</option><option>อังคาร</option><option>พุธ</option><option>พฤหัสบดี</option><option>ศุกร์</option></select></div><div class="field"><label for="plannedStart">เริ่ม</label><input id="plannedStart" type="time" required></div><div class="field"><label for="plannedDuration">ระยะเวลา</label><select id="plannedDuration" required><option value="1">1 ชั่วโมง</option><option value="2">2 ชั่วโมง</option></select></div><button class="add-subject" type="submit">+ เพิ่มวิชา</button></form><div class="subject-list" id="subjectList"></div></div>
+			<div class="stat-row"><div class="stat"><span>คาบเรียนสัปดาห์นี้</span><strong>0 คาบ</strong></div><div class="stat"><span>ห้องเรียนที่ใช้</span><strong>0 ห้อง</strong></div><div class="stat"><span>คาบถัดไป</span><strong>-</strong></div></div>
+		</div>
+	</section>
+	<div class="confirm-modal" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" hidden>
+		<div class="confirm-box"><div class="confirm-icon">?</div><h2 id="logoutTitle">ต้องการออกจากระบบหรือไม่?</h2><p>คุณจะกลับไปยังหน้าเลือกประเภทผู้ใช้งาน</p><div class="confirm-actions"><button class="cancel-logout" id="cancelLogout" type="button">ยกเลิก</button><button class="confirm-logout" id="confirmLogout" type="button">ออกจากระบบ</button></div></div>
+	</div>
+	<div class="confirm-modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetTitle" hidden>
+		<div class="confirm-box reset-box"><div class="confirm-icon">🔑</div><h2 id="resetTitle">ตั้งรหัสผ่านใหม่</h2><p>ยืนยันอีเมลของบัญชีเพื่อดำเนินการต่อ</p><form class="reset-form" id="resetForm"><div class="field"><label for="resetEmail">อีเมล</label><input id="resetEmail" type="email" required></div><div class="field"><label for="resetEmailConfirm">ยืนยันอีเมล</label><input id="resetEmailConfirm" type="email" required></div><div class="field"><label for="resetPassword">รหัสผ่านใหม่</label><input id="resetPassword" type="password" minlength="6" required></div><div class="field"><label for="resetPasswordConfirm">ยืนยันรหัสผ่านใหม่</label><input id="resetPasswordConfirm" type="password" minlength="6" required></div><div class="confirm-actions reset-actions"><button class="cancel-logout" id="cancelReset" type="button">ยกเลิก</button><button class="reset-submit" type="submit">บันทึกรหัสผ่าน</button></div></form></div>
+	</div>
+	<script>
+		const loginView = document.getElementById('loginView');
+		const loginCard = document.getElementById('loginForm');
+		const dashboardView = document.getElementById('dashboardView');
+		let selectedRole = 'teacher';
+		let authMode = 'login';
+		const teacherAccounts = JSON.parse(localStorage.getItem('classflowTeacherAccounts') || '{}');
+		const studentAccounts = JSON.parse(localStorage.getItem('classflowStudentAccounts') || '{}');
+		const teacherDetails = document.getElementById('teacherDetails');
+		const studentDetails = document.getElementById('studentDetails');
+		const teacherFields = teacherDetails.querySelectorAll('input, select');
+		const studentFields = studentDetails.querySelectorAll('input, select');
+		const studentLevel = document.getElementById('studentLevel');
+		const studentRoom = document.getElementById('studentRoom');
+		if (!localStorage.getItem('classflowScheduleResetV1')) {
+			localStorage.removeItem('classflowSubjects');
+			localStorage.removeItem('classflowTeacherSlots');
+			localStorage.setItem('classflowScheduleResetV1', 'true');
+		}
+		let studentSubjects = [];
+		let currentStudentEmail = '';
+		const teacherSlots = JSON.parse(localStorage.getItem('classflowTeacherSlots') || '[]');
+		let currentStudent = null;
+		let currentTeacher = { name: '', department: '' };
+		function saveStudentSubjects() {
+			if (!currentStudentEmail || !studentAccounts[currentStudentEmail]) return;
+			const savedAccount = typeof studentAccounts[currentStudentEmail] === 'object' ? studentAccounts[currentStudentEmail] : { password: studentAccounts[currentStudentEmail] };
+			studentAccounts[currentStudentEmail] = { ...savedAccount, subjects: studentSubjects };
+			localStorage.setItem('classflowStudentAccounts', JSON.stringify(studentAccounts));
+		}
+		function getAccountPassword(account) { return typeof account === 'string' ? account : account && account.password; }
+		function findAccount(accounts, email) {
+			const normalizedEmail = email.trim().toLowerCase();
+			const matchingKey = Object.keys(accounts).find(key => key.trim().toLowerCase() === normalizedEmail);
+			return matchingKey ? accounts[matchingKey] : null;
+		}
+		function timeToMinutes(time) { const [hours, minutes] = time.split(':').map(Number); return hours * 60 + minutes; }
+		function minutesToTime(minutes) { return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`; }
+		function isVocationalLevel(level) { return level.startsWith('ปวช.') || level.startsWith('ปวส.'); }
+		function getStudentDuration(item) { return Number(item.duration) || Math.max(1, Math.round((timeToMinutes(item.end) - timeToMinutes(item.start)) / 60)); }
+		function renderVocationalSchedule() {
+			if (!isVocationalLevel(currentStudent.level)) return;
+			const scheduleBody = document.getElementById('scheduleBody');
+			const rows = [];
+			for (let minutes = 8 * 60 + 30; minutes < 19 * 60; minutes += 60) {
+				const start = minutesToTime(minutes);
+				const end = minutesToTime(minutes + 60);
+				const cells = Array.from({ length: 5 }, (_, index) => `<td data-day-index="${index + 1}"><div class="empty">—</div></td>`).join('');
+				rows.push(`<tr data-time="${start}"><td>${start} - ${end}</td>${cells}</tr>`);
+			}
+			scheduleBody.innerHTML = rows.join('');
+		}
+		function findTeacherConflict(day, start, end) {
+			return teacherSlots.find(slot => slot.day === day && timeToMinutes(start) < timeToMinutes(slot.end) && timeToMinutes(end) > timeToMinutes(slot.start));
+		}
+		function labelExistingTeacherSlots() {
+			document.querySelectorAll('.schedule .class small').forEach(detail => {
+				if (!detail.innerHTML.startsWith('อาจารย์ประจำวิชา')) detail.innerHTML = `อาจารย์ประจำวิชา<br>${detail.innerHTML}`;
+			});
+		}
+		function showTeacherSlot(subject, room, day, startTime, endTime, teacherName) {
+			const dayIndex = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'].indexOf(day) + 1;
+			const scheduleBody = document.getElementById('scheduleBody');
+			let row = [...scheduleBody.querySelectorAll('tr')].find(item => item.dataset.time === startTime.slice(0, 2) + ':00');
+			if (!row) { row = document.createElement('tr'); row.dataset.time = startTime.slice(0, 2) + ':00'; row.innerHTML = `<td>${startTime} - ${endTime}</td>${'<td><div class="empty">—</div></td>'.repeat(5)}`; scheduleBody.appendChild(row); }
+			row.children[dayIndex].innerHTML = `<div class="class"><strong>${teacherName}</strong><small>${subject}<br>${room}<br>${startTime} - ${endTime}</small><button type="button" class="remove-class" data-day="${day}" data-start="${startTime}" data-end="${endTime}">ยกเลิกคาบ</button></div>`;
+		}
+		function findStudentConflict(day, start, end) {
+			return studentSubjects.find(item => item.day === day && timeToMinutes(start) < timeToMinutes(item.end) && timeToMinutes(end) > timeToMinutes(item.start));
+		}
+		function showStudentSlot(subject, day, startTime, endTime) {
+			const dayIndex = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'].indexOf(day) + 1;
+			const scheduleBody = document.getElementById('scheduleBody');
+			const duration = getStudentDuration({ start: startTime, end: endTime });
+			if (isVocationalLevel(currentStudent.level)) {
+				const row = [...scheduleBody.querySelectorAll('tr')].find(item => item.dataset.time === startTime);
+				const cell = row && row.querySelector(`[data-day-index="${dayIndex}"]`);
+				if (!cell) return;
+				cell.rowSpan = duration;
+				cell.innerHTML = `<div class="class coral"><strong>${subject}</strong><small>วิชาที่เลือกเอง<br>${startTime} - ${endTime}</small></div>`;
+				for (let offset = 1; offset < duration; offset += 1) {
+					const nextRow = [...scheduleBody.querySelectorAll('tr')].find(item => item.dataset.time === minutesToTime(timeToMinutes(startTime) + offset * 60));
+					nextRow?.querySelector(`[data-day-index="${dayIndex}"]`)?.remove();
+				}
+				return;
+			}
+			let row = [...scheduleBody.querySelectorAll('tr')].find(item => item.dataset.time === startTime.slice(0, 2) + ':00');
+			if (!row) { row = document.createElement('tr'); row.dataset.time = startTime.slice(0, 2) + ':00'; row.innerHTML = `<td>${startTime} - ${endTime}</td>${'<td><div class="empty">—</div></td>'.repeat(5)}`; scheduleBody.appendChild(row); }
+			row.children[dayIndex].innerHTML = `<div class="class coral"><strong>${subject}</strong><small>วิชาที่เลือกเอง<br>${startTime} - ${endTime}</small></div>`;
+		}
+		document.getElementById('scheduleBody').addEventListener('click', event => {
+			const button = event.target.closest('.remove-class');
+			if (!button) return;
+			const slotIndex = teacherSlots.findIndex(slot => slot.day === button.dataset.day && slot.start === button.dataset.start && slot.end === button.dataset.end);
+			if (slotIndex === -1) return;
+			teacherSlots.splice(slotIndex, 1);
+			localStorage.setItem('classflowTeacherSlots', JSON.stringify(teacherSlots));
+			button.closest('td').innerHTML = '<div class="empty">—</div>';
+		});
+		function updateAuthCopy() {
+			const isRegister = authMode === 'register';
+			const userType = selectedRole === 'teacher' ? 'ครู' : 'นักเรียน';
+			teacherDetails.hidden = selectedRole !== 'teacher' || !isRegister;
+			studentDetails.hidden = selectedRole !== 'student' || !isRegister;
+			teacherDetails.classList.toggle('registration-mode', isRegister && selectedRole === 'teacher');
+			studentDetails.classList.toggle('registration-mode', isRegister && selectedRole === 'student');
+			document.getElementById('forgotPassword').hidden = isRegister;
+			teacherDetails.querySelector('h3').textContent = isRegister && selectedRole === 'teacher' ? 'ข้อมูลสำหรับสมัครสมาชิก' : 'ข้อมูลคาบเรียนที่จะสอน';
+			teacherFields.forEach(field => {
+				field.required = selectedRole === 'teacher' && isRegister && !field.closest('.schedule-field');
+			});
+			studentFields.forEach(field => {
+				field.disabled = selectedRole === 'teacher' || !isRegister;
+				field.required = selectedRole === 'student' && isRegister && !field.closest('.student-registration-hidden');
+			});
+			document.getElementById('authTitle').textContent = isRegister ? `สร้างบัญชี${userType}` : 'ยินดีต้อนรับกลับ';
+			document.getElementById('authSubtitle').textContent = isRegister ? `สมัครใช้งาน${userType}ด้วยอีเมลของคุณ` : 'เข้าสู่ระบบด้วยอีเมลเพื่อดูตารางเวลาของคุณ';
+			document.getElementById('authSubmit').innerHTML = `${isRegister ? 'สมัคร' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span>`;
+			document.getElementById('authHint').textContent = isRegister ? `ใช้อีเมลและรหัสผ่านเพื่อสร้างบัญชี${userType}` : 'ใช้ อีเมล และรหัสผ่านเพื่อเข้าสู่ระบบ';
+			updateStudentRooms();
+		}
+		document.getElementById('passwordToggle').addEventListener('click', event => {
+			const passwordInput = document.getElementById('password');
+			const isVisible = passwordInput.type === 'text';
+			passwordInput.type = isVisible ? 'password' : 'text';
+			event.currentTarget.textContent = isVisible ? 'แสดง' : 'ซ่อน';
+			event.currentTarget.setAttribute('aria-label', isVisible ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน');
+		});
+		function updateStudentRooms() {
+			const level = studentLevel.value;
+			const hasRooms = /^ม\.[1-6]$/.test(level);
+			studentRoom.closest('.field').classList.toggle('student-registration-hidden', !hasRooms);
+			studentRoom.innerHTML = hasRooms ? `<option value="">เลือกห้องเรียน</option>${[1, 2, 3, 4].map(room => `<option>${level}/${room}</option>`).join('')}` : '<option value="">ระดับนี้ไม่ใช้ห้องเรียน</option>';
+			studentRoom.disabled = !hasRooms || selectedRole === 'teacher';
+			studentRoom.required = hasRooms && selectedRole === 'student' && authMode === 'register';
+		}
+		studentLevel.addEventListener('change', updateStudentRooms);
+		document.querySelectorAll('.role').forEach(button => button.addEventListener('click', () => {
+			loginCard.classList.remove('role-selection');
+			document.querySelectorAll('.role').forEach(item => item.classList.remove('active'));
+			button.classList.add('active');
+			selectedRole = button.dataset.role;
+			const isTeacher = selectedRole === 'teacher';
+			teacherDetails.hidden = !isTeacher;
+			teacherFields.forEach(field => field.required = isTeacher);
+			studentDetails.hidden = isTeacher;
+			studentFields.forEach(field => { field.disabled = isTeacher; field.required = !isTeacher; });
+			updateStudentRooms();
+			updateAuthCopy();
+		}));
+		document.querySelectorAll('.auth-tab').forEach(button => button.addEventListener('click', () => {
+			document.querySelectorAll('.auth-tab').forEach(item => item.classList.remove('active'));
+			button.classList.add('active');
+			authMode = button.dataset.auth;
+			updateAuthCopy();
+		}));
+		document.querySelectorAll('.landing-action').forEach(button => button.addEventListener('click', () => {
+			loginView.classList.remove('landing');
+			loginCard.classList.add('role-selection');
+			document.querySelector(`.auth-tab[data-auth="${button.dataset.auth}"]`).click();
+		}));
+		updateAuthCopy();
+		function renderStudentSubjects() {
+			const list = document.getElementById('subjectList');
+			list.innerHTML = studentSubjects.length ? studentSubjects.map((item, index) => `<div class="subject-item"><div><strong>${item.subject}</strong><small>${item.day} · ${item.start} - ${item.end}</small></div><div class="locked">🔒 ล็อกแล้ว <button type="button" class="edit-subject" data-index="${index}">แก้ไข</button></div></div>`).join('') : '<div class="empty">ยังไม่มีวิชาที่บันทึกไว้</div>';
+			list.querySelectorAll('.edit-subject').forEach(button => button.addEventListener('click', () => {
+				const item = studentSubjects[Number(button.dataset.index)];
+				document.getElementById('plannedSubject').value = item.subject;
+				document.getElementById('plannedDay').value = item.day;
+				document.getElementById('plannedStart').value = item.start;
+				document.getElementById('plannedDuration').value = String(getStudentDuration(item));
+				studentSubjects.splice(Number(button.dataset.index), 1);
+				saveStudentSubjects();
+				renderStudentSubjects();
+			}));
+		}
+		renderStudentSubjects();
+		document.getElementById('subjectForm').addEventListener('submit', event => {
+			event.preventDefault();
+			const subject = document.getElementById('plannedSubject').value.trim();
+			const day = document.getElementById('plannedDay').value;
+			const start = document.getElementById('plannedStart').value;
+			const duration = Number(document.getElementById('plannedDuration').value);
+			const startMinutes = timeToMinutes(start);
+			const end = minutesToTime(startMinutes + duration * 60);
+			if (isVocationalLevel(currentStudent.level) && (startMinutes < 8 * 60 + 30 || startMinutes + duration * 60 > 19 * 60 || (startMinutes - (8 * 60 + 30)) % 60 !== 0)) {
+				alert('ปวช. และ ปวส. เรียนได้ตั้งแต่ 08:30 ถึง 19:00 โดยเริ่มคาบทุก 1 ชั่วโมง');
+				return;
+			}
+			const conflict = findStudentConflict(day, start, end);
+			if (conflict) { alert(`ไม่สามารถเลือกคาบนี้ได้\nคาบนี้ถูกเลือกโดย ${conflict.studentName || 'นักเรียนคนอื่น'}\nวิชา: ${conflict.subject}`); return; }
+			studentSubjects.push({ subject, day, start, end, duration, studentName: currentStudent ? currentStudent.name : 'นักเรียน' });
+			saveStudentSubjects();
+			showStudentSlot(subject, day, start, end); event.target.reset(); renderStudentSubjects();
+		});
+		document.getElementById('bookClass').addEventListener('click', () => {
+			document.getElementById('teacherBooking').classList.add('show');
+			document.getElementById('teacherBooking').scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+		document.getElementById('viewSchedule').addEventListener('click', () => {
+			document.getElementById('teacherBooking').classList.remove('show');
+			document.querySelector('.schedule').scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+		document.getElementById('bookingForm').addEventListener('submit', event => {
+			event.preventDefault();
+			const subject = document.getElementById('bookingSubject').value.trim();
+			const room = document.getElementById('bookingRoom').value.trim();
+			const selectedDate = document.getElementById('bookingDate').value;
+			const start = document.getElementById('bookingStart').value;
+			const end = document.getElementById('bookingEnd').value;
+			const weekdays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+			const day = selectedDate ? weekdays[new Date(`${selectedDate}T00:00:00`).getDay()] : '';
+			if (!['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'].includes(day)) { alert('กรุณาเลือกวันที่สอนตั้งแต่วันจันทร์ถึงวันศุกร์'); return; }
+			const conflict = findTeacherConflict(day, start, end);
+			if (conflict) { alert(`ไม่สามารถจองคาบนี้ได้\nคาบนี้ถูกจองโดย ${conflict.teacher}\nวิชา: ${conflict.subject}`); return; }
+			teacherSlots.push({ teacher: currentTeacher.name, subject, room, day, start, end });
+			localStorage.setItem('classflowTeacherSlots', JSON.stringify(teacherSlots));
+			showTeacherSlot(subject, room, day, start, end, currentTeacher.name);
+			event.target.reset();
+			document.getElementById('teacherBooking').classList.remove('show');
+		});
+		document.getElementById('loginForm').addEventListener('submit', event => {
+			event.preventDefault();
+			const account = document.getElementById('account').value.trim().toLowerCase();
+			const password = document.getElementById('password').value;
+			const teacherNameInput = document.getElementById('teacherName').value.trim();
+			const departmentInput = document.getElementById('department').value.trim();
+			let studentName = document.getElementById('studentName').value.trim();
+			let studentLevel = document.getElementById('studentLevel').value;
+			const accounts = selectedRole === 'teacher' ? teacherAccounts : studentAccounts;
+			const accountStorageKey = selectedRole === 'teacher' ? 'classflowTeacherAccounts' : 'classflowStudentAccounts';
+			if (authMode === 'register') {
+				accounts[account] = selectedRole === 'teacher' ? { password, name: teacherNameInput, department: departmentInput } : { password, name: studentName, level: studentLevel, subjects: [] };
+				localStorage.setItem(accountStorageKey, JSON.stringify(accounts));
+				alert('สมัครบัญชีสำเร็จ สามารถเข้าสู่ระบบด้วยอีเมลนี้ได้');
+				if (selectedRole === 'teacher') {
+					currentTeacher = { name: teacherNameInput, department: departmentInput };
+					document.getElementById('teacherProfile').textContent = `${currentTeacher.name} · แผนก ${currentTeacher.department}`;
+				}
+			} else if (selectedRole === 'teacher') {
+				const savedAccount = findAccount(accounts, account);
+				const savedPassword = getAccountPassword(savedAccount);
+				if (!savedAccount || String(savedPassword) !== String(password)) {
+					alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+					return;
+				}
+				currentTeacher = { name: typeof savedAccount === 'object' ? savedAccount.name || 'ครู' : 'ครู', department: typeof savedAccount === 'object' ? savedAccount.department || '-' : '-' };
+				document.getElementById('teacherProfile').textContent = `${currentTeacher.name} · แผนก ${currentTeacher.department}`;
+			} else if (selectedRole === 'student') {
+				const savedAccount = findAccount(accounts, account);
+				const savedPassword = getAccountPassword(savedAccount);
+				if (!savedAccount || String(savedPassword) !== String(password)) {
+					alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+					return;
+				}
+				if (savedAccount && typeof savedAccount === 'object') {
+					studentName = savedAccount.name || '';
+					studentLevel = savedAccount.level || '';
+				}
+				currentStudentEmail = account;
+				studentSubjects = typeof savedAccount === 'object' && Array.isArray(savedAccount.subjects) ? savedAccount.subjects : [];
+				document.getElementById('studentProfile').textContent = `${studentName} · ${studentLevel}`;
+			} else if (accounts[account] && accounts[account] !== password) {
+				alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+				return;
+			}
+			const studentId = document.getElementById('studentId').value.trim();
+			const studentRoomValue = document.getElementById('studentRoom').value;
+			currentStudent = { name: studentName, id: studentId, level: studentLevel, room: studentRoomValue };
+			if (selectedRole === 'student' && authMode === 'register') {
+				currentStudentEmail = account;
+				studentSubjects = [];
+				document.getElementById('studentProfile').textContent = `${studentName} · ${studentLevel}`;
+			}
+			const teacherName = teacherNameInput;
+			const department = departmentInput;
+			const subject = document.getElementById('subject').value.trim();
+			const room = document.getElementById('room').value.trim();
+			const selectedDate = document.getElementById('day').value;
+			const weekdays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+			const day = selectedDate ? weekdays[new Date(`${selectedDate}T00:00:00`).getDay()] : '';
+			const startTime = document.getElementById('startTime').value;
+			const endTime = document.getElementById('endTime').value;
+			if (selectedRole === 'teacher' && day && !['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'].includes(day)) {
+				alert('กรุณาเลือกวันที่สอนตั้งแต่วันจันทร์ถึงวันศุกร์');
+				return;
+			}
+			document.getElementById('userType').textContent = selectedRole === 'teacher' ? 'อาจารย์' : 'นักเรียน';
+			document.getElementById('avatar').textContent = selectedRole === 'teacher' ? 'อ' : 'น';
+			document.getElementById('scheduleTitle').textContent = selectedRole === 'teacher' ? 'ตารางสอนประจำสัปดาห์' : 'ตารางเรียนของฉัน';
+			document.getElementById('studentPlanner').classList.toggle('show', selectedRole === 'student');
+			dashboardView.classList.toggle('student-mode', selectedRole === 'student');
+			if (selectedRole === 'student') renderVocationalSchedule();
+			labelExistingTeacherSlots();
+			if (selectedRole === 'student') studentSubjects.forEach(item => showStudentSlot(item.subject, item.day, item.start, item.end));
+			if (selectedRole === 'student') renderStudentSubjects();
+			loginView.style.display = 'none'; dashboardView.classList.add('show'); window.scrollTo(0, 0);
+		});
+		const logoutModal = document.getElementById('logoutModal');
+		const resetModal = document.getElementById('resetModal');
+		document.getElementById('forgotPassword').addEventListener('click', event => {
+			event.preventDefault();
+			document.getElementById('resetForm').reset();
+			document.getElementById('resetEmail').value = document.getElementById('account').value.trim().toLowerCase();
+			resetModal.hidden = false;
+		});
+		document.getElementById('cancelReset').addEventListener('click', () => { resetModal.hidden = true; });
+		document.getElementById('resetForm').addEventListener('submit', event => {
+			event.preventDefault();
+			const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+			const emailConfirm = document.getElementById('resetEmailConfirm').value.trim().toLowerCase();
+			const newPassword = document.getElementById('resetPassword').value;
+			const passwordConfirm = document.getElementById('resetPasswordConfirm').value;
+			if (email !== emailConfirm) { alert('อีเมลยืนยันไม่ตรงกัน'); return; }
+			if (newPassword !== passwordConfirm) { alert('รหัสผ่านใหม่ไม่ตรงกัน'); return; }
+			const accounts = selectedRole === 'teacher' ? teacherAccounts : studentAccounts;
+			const accountStorageKey = selectedRole === 'teacher' ? 'classflowTeacherAccounts' : 'classflowStudentAccounts';
+			const savedAccount = accounts[email];
+			if (!savedAccount) { alert('ไม่พบอีเมลนี้ในระบบ'); return; }
+			const accountData = typeof savedAccount === 'string' ? { password: savedAccount } : savedAccount;
+			accounts[email] = { ...accountData, password: newPassword };
+			localStorage.setItem(accountStorageKey, JSON.stringify(accounts));
+			resetModal.hidden = true;
+			document.getElementById('account').value = email;
+			document.getElementById('password').value = '';
+			alert('เปลี่ยนรหัสผ่านสำเร็จ สามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้');
+		});
+		document.getElementById('logout').addEventListener('click', () => { logoutModal.hidden = false; });
+		document.getElementById('cancelLogout').addEventListener('click', () => { logoutModal.hidden = true; });
+		document.getElementById('confirmLogout').addEventListener('click', () => {
+			logoutModal.hidden = true;
+			dashboardView.classList.remove('show', 'student-mode');
+			loginView.style.display = '';
+			loginView.classList.add('landing');
+			loginCard.classList.remove('role-selection');
+			document.getElementById('account').value = '';
+			document.getElementById('password').value = '';
+			document.getElementById('password').type = 'password';
+			document.getElementById('passwordToggle').textContent = 'แสดง';
+			document.getElementById('passwordToggle').setAttribute('aria-label', 'แสดงรหัสผ่าน');
+		});
+	</script>
+</body>
+</html>
